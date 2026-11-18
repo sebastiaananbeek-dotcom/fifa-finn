@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FIFA Finn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800;900&family=Saira:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: a football game menu. Skills are collectible cards (Top 10, goud, zilver) in a club grid; a card opens a full screen skill sheet. */
+:root{
+  --bg:#060a14;
+  --panel:#0d1526;
+  --panel-2:#121d33;
+  --text:#f2f6ff;
+  --muted:#8e9ab3;
+  --line:rgba(160,185,235,.16);
+  --neon:#c4ff3a;
+  --cyan:#22d8ff;
+  --grad:linear-gradient(90deg,var(--neon),var(--cyan));
+  --red:#e8322b;
+  --font-display:"Saira Condensed","Arial Narrow",Impact,sans-serif;
+  --font-body:"Saira","Segoe UI",system-ui,sans-serif;
+  --ps-tri:#3fe0b0; --ps-cir:#ff5c5c; --ps-crs:#7fa6ff; --ps-sq:#ff8fd0;
+  --cut:16px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:
+    radial-gradient(900px 500px at 85% -10%,rgba(34,216,255,.18),transparent 60%),
+    radial-gradient(800px 500px at -10% 10%,rgba(196,255,58,.12),transparent 60%),
+    var(--bg);
+  background-attachment:fixed;
+  color:var(--text);
+  font:400 16px/1.55 var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+body.lock{overflow:hidden}
+a{color:inherit}
+button{font:inherit;color:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+.slant{font-family:var(--font-display);font-style:italic;text-transform:uppercase;letter-spacing:.01em}
+.chamfer{clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)))}
+
+/* ===== Top HUD ===== */
+.hud{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+.logo .mk{width:40px;height:40px;background:var(--grad);display:grid;place-items:center;color:#06101a;font:900 22px/1 var(--font-display);font-style:italic}
+.logo .tx{font:900 24px/1 var(--font-display);font-style:italic;text-transform:uppercase;letter-spacing:.02em}
+.logo .tx span{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hud-right{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.pill{font:700 12px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);padding:8px 11px;background:rgba(13,21,38,.7)}
+
+/* ===== Hero ===== */
+.hero{display:grid;grid-template-columns:1.2fr 1fr;gap:24px;padding:34px 0 28px;align-items:stretch}
+.hero h1{margin:0;font:900 clamp(64px,10vw,124px)/.84 var(--font-display);font-style:italic;text-transform:uppercase;letter-spacing:-.005em}
+.hero h1 .g{display:block;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.08em}
+.hero .kick{display:inline-block;font:800 14px/1 var(--font-display);font-style:italic;letter-spacing:.14em;text-transform:uppercase;color:#06101a;background:var(--grad);padding:7px 14px 7px 10px;margin-bottom:16px;clip-path:polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+.hero p.lede{font-size:18px;max-width:40ch;margin:18px 0 0;color:#c9d3e8;text-wrap:balance}
+.tiles{display:grid;grid-template-rows:auto auto;gap:12px}
+.tile{position:relative;background:linear-gradient(160deg,var(--panel-2),var(--panel));border:1px solid var(--line);padding:18px 20px}
+.tile::before{content:"";position:absolute;left:0;top:0;right:0;height:3px;background:var(--grad)}
+.tile .lbl{font:800 13px/1 var(--font-display);font-style:italic;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.today-body{display:flex;gap:16px;align-items:center;margin-top:12px}
+.today-num{font:900 72px/.8 var(--font-display);font-style:italic;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.06em}
+.today-name{font:800 30px/1 var(--font-display);font-style:italic;text-transform:uppercase;margin:0 0 8px}
+.today-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.rank{display:flex;align-items:center;gap:16px;margin-top:12px}
+.crest{width:64px;height:72px;flex:none;display:grid;place-items:center;background:var(--grad);color:#06101a;clip-path:polygon(50% 0,100% 18%,100% 70%,50% 100%,0 70%,0 18%)}
+.crest b{font:900 28px/1 var(--font-display);font-style:italic}
+.rank-txt{flex:1;min-width:0}
+.rank-name{font:800 26px/1 var(--font-display);font-style:italic;text-transform:uppercase}
+.rank-sub{color:var(--muted);font-size:14px;margin-top:4px}
+.xp{height:10px;background:#0a1120;border:1px solid var(--line);margin-top:10px;overflow:hidden;transform:skewX(-20deg)}
+.xp i{display:block;height:100%;width:0;background:var(--grad);transition:width .4s}
+
+/* ===== Buttons ===== */
+.btn{display:inline-flex;align-items:center;gap:8px;font:800 15px/1 var(--font-display);font-style:italic;letter-spacing:.06em;text-transform:uppercase;
+  text-decoration:none;padding:11px 18px 11px 14px;border:0;cursor:pointer;background:#1a2742;color:var(--text);
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+.btn:hover{background:#25365a}
+.btn.yt{background:var(--red);color:#fff}
+.btn.yt:hover{background:#ff453d}
+.btn.go{background:var(--grad);color:#06101a}
+.btn.go:hover{filter:brightness(1.1)}
+.btn[aria-pressed="true"]{background:var(--grad);color:#06101a}
+.btn:focus-visible,.tab:focus-visible,.lr:focus-visible,.hit:focus-visible,.search input:focus-visible,.x:focus-visible,.nav:focus-visible{outline:2px solid var(--neon);outline-offset:3px}
+.glyph{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.35);font:700 12px/1 var(--font-body);font-style:normal}
+
+/* ===== Tab bar ===== */
+.bar{position:sticky;top:0;z-index:20;background:rgba(6,10,20,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;flex-direction:column;gap:12px;padding-top:12px;padding-bottom:12px}
+.tabrow{display:flex;align-items:center;gap:8px}
+.lr{flex:none;border:1px solid var(--line);background:#0f1930;color:var(--text);font:700 12px/1 var(--font-body);padding:8px 10px;border-radius:6px;cursor:pointer}
+.lr:hover{border-color:var(--neon)}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;flex:1}
+.tab{flex:none;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:10px 16px;font:800 16px/1 var(--font-display);font-style:italic;text-transform:uppercase;letter-spacing:.04em;
+  clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%)}
+.tab .c{font-size:12px;opacity:.7;margin-left:4px}
+.tab:hover{color:var(--text);background:#111c33}
+.tab[aria-selected="true"]{background:var(--grad);color:#06101a}
+.subrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.search{position:relative;flex:1 1 260px}
+.search input{width:100%;font:500 15px var(--font-body);color:var(--text);background:#0c1424;border:1px solid var(--line);padding:10px 12px 10px 38px}
+.search input::placeholder{color:var(--muted)}
+.search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.count{font:700 13px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* ===== Cards ===== */
+main .wrap{padding-top:24px;padding-bottom:48px}
+.grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:18px}
+.card{position:relative;min-height:300px;padding:16px 16px 14px;display:flex;flex-direction:column;
+  --ink:#1c1405; --ink-soft:rgba(28,20,5,.65); --chipbg:rgba(28,20,5,.88);
+  transition:transform .18s ease, filter .18s ease}
+.card::after{ /* sheen */
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(115deg,rgba(255,255,255,.10) 0 2px,transparent 2px 16px);
+  mix-blend-mode:overlay;
+}
+.card.goud{background:linear-gradient(160deg,#fbeab0 0%,#e4c065 45%,#b98d33 100%);color:var(--ink)}
+.card.zilver{background:linear-gradient(160deg,#f3f6fa 0%,#c9d1db 50%,#95a1ae 100%);--ink:#151b24;--ink-soft:rgba(21,27,36,.62);--chipbg:rgba(21,27,36,.9);color:var(--ink)}
+.card.top{background:
+    linear-gradient(160deg,rgba(196,255,58,.18),transparent 40%),
+    linear-gradient(340deg,rgba(34,216,255,.22),transparent 45%),
+    #0b1324;
+  --ink:#f2f6ff;--ink-soft:rgba(242,246,255,.65);--chipbg:rgba(0,0,0,.45);color:var(--ink);
+  box-shadow:inset 0 0 0 2px rgba(196,255,58,.55)}
+.card:hover{transform:translateY(-4px);filter:drop-shadow(0 10px 22px rgba(34,216,255,.25))}
+.hit{position:absolute;inset:0;z-index:1;border:0;background:transparent;cursor:pointer}
+.c-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.c-rk{display:flex;flex-direction:column;align-items:center;line-height:.82}
+.c-rk b{font:900 54px/.82 var(--font-display);font-style:italic}
+.card.top .c-rk b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;padding-right:.06em}
+.c-rk span{font:800 15px/1 var(--font-display);font-style:italic;letter-spacing:.06em;margin-top:6px;color:var(--ink-soft)}
+.c-tag{font:800 11px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;padding:5px 7px;background:var(--chipbg);color:#fff}
+.card.top .c-tag{background:var(--grad);color:#06101a}
+.c-stars{font-size:14px;letter-spacing:1px;color:var(--ink);margin-top:6px;text-align:right}
+.c-stars .off{opacity:.25}
+.c-badge{font:700 11px/1 var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-top:6px;text-align:right}
+.c-name{margin:auto 0 10px;font:900 26px/.95 var(--font-display);font-style:italic;text-transform:uppercase;letter-spacing:.005em;text-wrap:balance}
+.c-rule{height:2px;background:currentColor;opacity:.25;margin:0 0 10px}
+.c-keys{display:flex;flex-wrap:wrap;gap:4px;align-items:center;min-height:26px}
+.c-foot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;position:relative;z-index:2}
+.c-cat{font:700 12px/1 var(--font-body);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.c-vid{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font:800 13px/1 var(--font-display);font-style:italic;letter-spacing:.06em;text-transform:uppercase;background:var(--red);color:#fff;padding:7px 12px 7px 9px;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
+.c-vid:hover{background:#ff453d}
+.c-vid:focus-visible{outline:2px solid var(--neon);outline-offset:3px}
+.c-done{position:absolute;top:-1px;left:50%;transform:translateX(-50%);z-index:2;font:800 11px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;background:var(--grad);color:#06101a;padding:5px 10px;display:none}
+.card.done .c-done{display:block}
+.empty{grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);border:1px dashed var(--line)}
+
+/* PS buttons */
+.k{display:inline-flex;align-items:center;justify-content:center;height:24px;min-width:24px;padding:0 6px;border-radius:5px;
+  font:700 12px/1 var(--font-body);background:var(--chipbg,#0b1324);color:#fff;border:1px solid rgba(255,255,255,.14)}
+.k.face{border-radius:50%;width:24px;padding:0;font-size:13px;background:#0b1324}
+.k.tri{color:var(--ps-tri)} .k.cir{color:var(--ps-cir)} .k.crs{color:var(--ps-crs)} .k.sq{color:var(--ps-sq)}
+.k.stick{border-radius:50%;width:24px;padding:0;font-size:11px;background:#0b1324}
+.k.arrow{background:none;border:0;min-width:auto;padding:0 1px;font-size:16px;color:inherit}
+.card.top .k.arrow,.sheet .k.arrow{color:var(--neon)}
+.k.word{background:none;border:0;min-width:auto;padding:0 2px;font-weight:700;color:inherit;opacity:.75;font-size:12px}
+.k.plain{background:var(--chipbg,#0b1324);font-weight:600}
+
+/* ===== Skill sheet (overlay) ===== */
+.ov{position:fixed;inset:0;z-index:50;background:rgba(3,6,12,.86);backdrop-filter:blur(6px);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:28px 16px}
+.ov[hidden]{display:none}
+.sheet{width:100%;max-width:1120px;display:grid;grid-template-columns:300px 1fr;gap:26px;animation:rise .25s ease}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.sheet-side{display:flex;flex-direction:column;gap:12px;position:sticky;top:0;align-self:start}
+.sheet-side .card{min-height:400px}
+.sheet-side .card:hover{transform:none;filter:none}
+.sheet-side .c-name{font-size:34px}
+.navrow{display:flex;gap:8px}
+.nav{flex:1;border:1px solid var(--line);background:#0f1930;cursor:pointer;padding:10px;font:800 15px/1 var(--font-display);font-style:italic;text-transform:uppercase;letter-spacing:.05em}
+.nav:hover{border-color:var(--neon)}
+.sheet-main{background:linear-gradient(170deg,var(--panel-2),var(--panel));border:1px solid var(--line);position:relative;padding:24px 26px 26px}
+.sheet-main::before{content:"";position:absolute;left:0;top:0;right:0;height:4px;background:var(--grad)}
+.x{position:absolute;top:16px;right:16px;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:#0f1930;padding:8px 12px;cursor:pointer;font:800 14px/1 var(--font-display);font-style:italic;text-transform:uppercase;letter-spacing:.06em}
+.x:hover{border-color:var(--ps-cir)}
+.x .glyph{color:var(--ps-cir)}
+.s-kick{font:800 13px/1 var(--font-display);font-style:italic;letter-spacing:.14em;text-transform:uppercase;color:var(--neon)}
+.s-title{margin:8px 0 18px;font:900 clamp(38px,5vw,58px)/.9 var(--font-display);font-style:italic;text-transform:uppercase;padding-right:120px;text-wrap:balance}
+.panel{border:1px solid var(--line);background:rgba(6,10,20,.5);margin-bottom:16px}
+.ph{display:flex;align-items:center;gap:10px;padding:9px 14px;background:linear-gradient(90deg,rgba(196,255,58,.14),rgba(34,216,255,.04) 70%,transparent);border-bottom:1px solid var(--line);
+  font:800 17px/1 var(--font-display);font-style:italic;text-transform:uppercase;letter-spacing:.05em}
+.ph::before{content:"";width:4px;height:16px;background:var(--grad);transform:skewX(-20deg)}
+.pb{padding:14px 16px}
+.pb p{margin:0;max-width:66ch;color:#d7def0}
+.ctrl{display:flex;flex-direction:column;gap:10px}
+.ctrl .r{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center}
+.ctrl .d{color:var(--muted);font-size:15px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.two .panel{margin-bottom:0}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:12px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;color:#d7def0}
+ol.steps li::before{content:counter(s);display:grid;place-items:center;height:28px;font:900 18px/1 var(--font-display);font-style:italic;color:#06101a;background:var(--grad);clip-path:polygon(5px 0,100% 0,calc(100% - 5px) 100%,0 100%)}
+.tip{display:flex;gap:14px;align-items:flex-start;padding:14px 16px;background:linear-gradient(90deg,rgba(196,255,58,.14),rgba(196,255,58,.03));border:1px solid rgba(196,255,58,.35);margin-bottom:16px}
+.tip b{flex:none;font:900 15px/1.3 var(--font-display);font-style:italic;letter-spacing:.08em;text-transform:uppercase;color:var(--neon)}
+.tip span{color:#e8eefb}
+.s-acts{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+
+footer{border-top:1px solid var(--line);color:var(--muted);font-size:14px}
+footer .wrap{padding-top:26px;padding-bottom:40px;display:grid;grid-template-columns:1fr 1fr;gap:28px}
+footer h4{margin:0 0 8px;font:800 18px/1 var(--font-display);font-style:italic;text-transform:uppercase;letter-spacing:.06em;color:var(--text)}
+footer p{margin:0 0 10px}
+footer ul{margin:0;padding-left:18px}
+
+@media (max-width:900px){
+  .hero{grid-template-columns:1fr}
+  .sheet{grid-template-columns:1fr}
+  .sheet-side{position:static}
+  .sheet-side .card{display:none}
+  .two{grid-template-columns:1fr}
+}
+@media (max-width:600px){
+  .hud-right .pill:nth-child(n+2){display:none}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .card{min-height:250px;padding:12px 12px 12px;--cut:12px}
+  .c-rk b{font-size:40px}
+  .c-name{font-size:19px}
+  .c-cat{display:none}
+  .k{height:21px;min-width:21px;font-size:11px}
+  .k.face,.k.stick{width:21px}
+  .bar{position:static}
+  .sheet-main{padding:18px 16px 20px}
+  .s-title{padding-right:0;margin-top:44px}
+  footer .wrap{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hud">
+    <a class="logo" href="#" aria-label="FIFA Finn, naar boven"><span class="mk chamfer">F</span><span class="tx">FIFA <span>Finn</span></span></a>
+    <div class="hud-right">
+      <span class="pill">EA SPORTS FC 27</span>
+      <span class="pill">PlayStation</span>
+      <span class="pill">Update 1.2 · nov 2026</span>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div>
+      <span class="kick">Pro skills · Divisie 1</span>
+      <h1>FIFA <span class="g">Finn</span></h1>
+      <p class="lede">50 skills die je moet beheersen om mee te kunnen in Divisie 1. Open een kaart voor de knoppen, de video en precies hoe je het traint.</p>
+    </div>
+    <div class="tiles">
+      <div class="tile chamfer" id="today"></div>
+      <div class="tile chamfer">
+        <div class="lbl">Jouw rang</div>
+        <div class="rank">
+          <div class="crest" aria-hidden="true"><b id="crestN">10</b></div>
+          <div class="rank-txt">
+            <div class="rank-name" id="rankName">Divisie 10</div>
+            <div class="rank-sub" id="rankSub"></div>
+            <div class="xp" aria-hidden="true"><i id="xpBar"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="tabrow">
+      <button class="lr" id="prevTab" aria-label="Vorige categorie">L1</button>
+      <div class="tabs" id="tabs" role="tablist" aria-label="Categorie"></div>
+      <button class="lr" id="nextTab" aria-label="Volgende categorie">R1</button>
+    </div>
+    <div class="subrow">
+      <label class="search" for="q">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <input id="q" type="search" placeholder="Zoek een skill, bijvoorbeeld elastico of R1" autocomplete="off" aria-label="Zoek een skill">
+      </label>
+      <button class="btn" id="hideDone" aria-pressed="false">Verberg beheerst</button>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="wrap">
+    <ol class="grid" id="grid"></ol>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <h4>Zo werkt het</h4>
+      <p>Klik op een kaart voor de uitleg. De rode knop opent YouTube met tutorials voor die skill. Vink aan wat je beheerst: elke 5 skills ga je een divisie omhoog. Dat wordt alleen in deze browser onthouden.</p>
+      <p>Top 10 kaarten zijn de belangrijkste skills, goud is 11 tot en met 25, zilver is 26 tot en met 50.</p>
+      <p>De knoppen gelden voor PlayStation met de Classic indeling. Andere indeling? Kijk in het spel bij Instellingen &gt; Controls. Skill moves werken alleen bij spelers met genoeg sterren.</p>
+      <p>FIFA Finn is een eigen app en hoort niet bij EA SPORTS.</p>
+    </div>
+    <div>
+      <h4>Bronnen</h4>
+      <ul>
+        <li><a href="https://www.ea.com/games/ea-sports-fc/fc-27/news/pitch-notes-fc27-gameplay-deep-dive">EA Pitch Notes: FC 27 Gameplay Deep Dive</a></li>
+        <li><a href="https://www.forbes.com/sites/brianmazique/2026/11/09/ea-just-changed-how-fc-27-defends-and-the-meta-tactic-everyone-hates-is-the-first-target/">Forbes: FC 27 Title Update 1.2</a></li>
+        <li><a href="https://www.fifplay.com/fc-27-controls/">FIFPlay: FC 27 Controls</a></li>
+        <li><a href="https://fifauteam.com/fc-27-skill-moves/">FIFA Ultimate Team: FC 27 Skill Moves</a></li>
+        <li><a href="https://www.fifplay.com/fc-27-defending-tips/">FIFPlay: FC 27 Defending Tips</a></li>
+        <li><a href="https://www.fifplay.com/fc-27-attacking-tips/">FIFPlay: FC 27 Attacking Tips</a></li>
+        <li><a href="https://www.redbull.com/gb-en/ea-fc-27-guide-tips">Red Bull: 10 FC 27 tips van een pro</a></li>
+        <li><a href="https://timesaver.gg/blog/fc-27-low-driven-shot-how-to-do-it-near-post-nerf-status">Timesaver: FC 27 Low Driven Shot</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<div class="ov" id="ov" hidden role="dialog" aria-modal="true" aria-labelledby="sTitle"></div>
+
+<script>
+const SKILLS = [
+{n:1, name:"Jockeyen", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["L2 + LS","vasthouden en meebewegen"]],
+ why:"In FC 27 tackelen de computerverdedigers niet meer vanzelf. Jij moet het dus zelf doen. Met jockeyen blijft je verdediger met zijn gezicht naar de aanvaller staan en beweegt hij zijwaarts mee. Zo houd je de aanvaller voor je en geef je geen ruimte weg.",
+ steps:[
+  "Houd L2 ingedrukt zodra de aanvaller op een paar meter van je verdediger is. Laat R2 los, want sprinten maakt je verdediger stijf.",
+  "Stuur met de linker stick zo dat je altijd tussen de aanvaller en je eigen goal staat. Denk aan een lijn van de bal naar het midden van je goal. Daar sta jij op.",
+  "Duw de aanvaller naar de zijlijn. Sta een klein stukje naar binnen, zodat hij alleen langs de buitenkant kan.",
+  "Kom niet te dichtbij. Ben je te dichtbij, dan gaat hij er met één skill langs.",
+  "Oefen tien minuten alleen jockeyen in een wedstrijd tegen de computer, zonder één keer te tackelen."
+ ],
+ gain:"Tegenstanders in Divisie 1 kunnen goed dribbelen. Als jij rustig blijft staan en meebeweegt, maken zij de fout in plaats van jij. Dat scheelt je elke wedstrijd een paar grote kansen tegen.",
+ tip:"Kijk naar de bal, niet naar de speler. Pas als de aanvaller de bal net iets te ver voor zich uit speelt, is het moment om in te grijpen.",
+ yt:"FC 27 jockey defending tutorial"},
+
+{n:2, name:"Slim wisselen van speler", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["L1","speler die het dichtst bij de bal staat"],["RS","speler in die richting kiezen"]],
+ why:"De beste verdediger is vaak niet de speler die het dichtst bij de bal staat. Pro's wisselen naar de speler die de pass of de loopactie kan stoppen. In FC 27 is dit nog belangrijker, omdat spelers die jij zelf bestuurt verder kunnen reiken dan computerspelers.",
+ steps:[
+  "Leer eerst L1. Eén tik geeft je de speler die het dichtst bij de bal staat.",
+  "Leer daarna de rechter stick. Duw hem in de richting van de speler die je wilt hebben. Zo pak je precies de man die je nodig hebt.",
+  "Wissel op tijd. Doe het voordat de pass wordt gegeven, niet erna. Kijk welke aanvaller wegloopt en neem zijn verdediger alvast.",
+  "Kijk in je instellingen bij Controls naar Right Stick Switching. Kies wat voor jou logisch voelt en verander het daarna niet meer.",
+  "Oefening: speel een wedstrijd tegen de computer en wissel elke aanval minstens twee keer bewust met de rechter stick."
+ ],
+ gain:"Goed wisselen voorkomt de meeste goals tegen uit steekpasses. Je hebt dan altijd de juiste man vast op het juiste moment.",
+ tip:"Wissel liever naar je middenvelder dan naar je centrale verdediger. Dan blijft je achterlijn heel.",
+ yt:"FC 27 how to switch players defending right stick"},
+
+{n:3, name:"Standing tackle op het goede moment", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["◯","standing tackle"],["R1 + ◯","harde tackle"]],
+ why:"Zonder automatische tackles moet jij de bal afpakken. Een goed getimede standing tackle wint de bal schoon. Met een slechte timing staat je verdediger uit positie en heeft de aanvaller vrije baan.",
+ steps:[
+  "Jockey eerst met L2 tot je dicht genoeg bij de aanvaller bent.",
+  "Wacht op een grote aanname of een touch waarbij de bal los van zijn voet is. Dat is je moment.",
+  "Druk dan één keer op ◯. Niet rammen. Elke extra druk maakt het slechter.",
+  "Gebruik R1 + ◯ alleen als je zeker bent. Die tackle is harder, maar mis je, dan geef je vaak een vrije trap of sta je uit positie.",
+  "In FC 27 heeft een tackle die jij zelf doet iets meer bereik dan in FC 26. Test in een oefenwedstrijd van hoe ver je kunt tackelen."
+ ],
+ gain:"Eén goede tackle is meteen een nieuwe aanval voor jou. Wie zijn timing beheerst, wint meer ballen en krijgt minder kaarten.",
+ tip:"Tackle als de aanvaller van richting verandert. Op dat moment is de bal even het verst van zijn voet.",
+ yt:"FC 27 standing tackle timing tutorial"},
+
+{n:4, name:"Low driven shot", cat:"schieten", lvl:"Voor iedereen",
+ keys:[["◯ dan ◯","kracht kiezen, dan snel nog een keer drukken"],["R1 + ◯ dan ◯","low driven finesse"]],
+ why:"De low driven shot is een laag en strak schot. In FC 27 is dit een van de beste manieren om te scoren. Vooral laag in de korte hoek heeft de keeper er veel moeite mee. EA heeft zelf gezegd dat dit schot op dit moment sterk is.",
+ steps:[
+  "Druk op ◯ om de kracht op te bouwen.",
+  "Druk daarna snel nog een keer op ◯. Je speler schiet dan laag en hard.",
+  "Gebruik niet te veel kracht dicht bij de goal. Minder kracht werkt daar beter.",
+  "Sta je schuin voor de goal? Mik dan laag op de korte hoek. Staat die hoek dicht, gebruik dan de finesse versie: R1 + ◯ en dan nog een keer ◯.",
+  "Oefen in de Practice Arena: twintig schoten van links en twintig van rechts. Let goed op het moment van je tweede druk."
+ ],
+ gain:"Veel kansen in Divisie 1 ontstaan schuin in de zestien. Met dit schot maak je van die halve kansen echte goals.",
+ tip:"Je kunt de low driven ook combineren met een power shot of trivela. Alleen met een chip shot werkt hij niet.",
+ yt:"FC 27 low driven shot tutorial"},
+
+{n:5, name:"Rust in balbezit", cat:"tactiek", lvl:"Voor iedereen",
+ keys:[["✕","kort tikken voor een korte pass"]],
+ why:"De meeste spelers verliezen de bal door haast. Ze rammen op ✕ of spelen vooruit terwijl er geen ruimte is. Pro's spelen rustig rond tot er een gat komt.",
+ steps:[
+  "Tik ✕ kort voor een korte pass. Houd hem alleen langer vast als de pass echt ver moet.",
+  "Pass alleen als je speler naar de ontvanger kijkt. Een pass met je rug naar je medespeler gaat vaak mis.",
+  "Is alles vooruit dicht? Speel dan terug naar je verdediger of je keeper. Zo moet de tegenstander opnieuw druk zetten en ontstaan er gaten.",
+  "Tel in je hoofd tot drie passes voordat je vooruit speelt. Zo leer je jezelf rust aan.",
+  "Kijk na een wedstrijd hoe vaak je de bal verloor door een slechte pass. Probeer dat elke week minder te laten worden."
+ ],
+ gain:"Wie de bal heeft, krijgt geen goal tegen. Tegenstanders worden ongeduldig, gaan te hoog drukken en laten ruimte achter.",
+ tip:"Wissel van tempo. Eerst rustig rondspelen, dan in één keer snel vooruit. Juist dat wisselen maakt je moeilijk te verdedigen.",
+ yt:"FC 27 how to keep possession build up play tips",
+ read:"https://www.redbull.com/gb-en/ea-fc-27-guide-tips"},
+
+{n:6, name:"Finesse shot", cat:"schieten", lvl:"Voor iedereen",
+ keys:[["R1 + ◯","krullend schot met de binnenkant van de voet"]],
+ why:"Het finesse schot krult met de binnenkant van de voet naar de verre hoek. Het is het meest betrouwbare schot van dichtbij en vanuit een schuine hoek. In FC 27 hangt het effect meer af van de schietwaarden van je speler.",
+ steps:[
+  "Houd R1 vast en druk op ◯.",
+  "Mik op de verre hoek. Duw de linker stick net naast de paal, de bal krult er zelf in.",
+  "Gebruik niet te veel kracht. Met te veel kracht gaat de bal over.",
+  "Schiet met je sterke been. Een rechtsbenige speler schiet het best vanaf de linkerkant van de zestien naar de verre rechterhoek.",
+  "Oefen vanaf de rand van de zestien, vanuit beide kanten. Kijk welke kracht het best werkt bij jouw spelers."
+ ],
+ gain:"Een finesse vanaf de rand van de zestien is een van de meest gebruikte afrondingen bij pro's. Als jij hem beheerst, wordt elke aanvaller die naar binnen snijdt gevaarlijk.",
+ tip:"Spelers met de Finesse Shot PlayStyle krullen beter. Check de PlayStyles van je aanvallers.",
+ yt:"FC 27 finesse shot tutorial"},
+
+{n:7, name:"Fake shot", cat:"skills", lvl:"1★ skill move",
+ keys:[["◯ dan ✕ + LS","schijnschot en weg in een richting"],["L1 + ◯ dan ✕ + LS","open up fake shot"]],
+ why:"De fake shot is de simpelste en een van de sterkste skills. Elke speler kan hem doen. De verdediger denkt dat je schiet en stapt in of gaat blokken. Jij neemt de bal mee naar de andere kant.",
+ steps:[
+  "Druk op ◯ (schieten) en direct daarna op ✕ (passen). Je speler stopt het schot en doet een schijnbeweging.",
+  "Duw tegelijk de linker stick de kant op waar je heen wilt.",
+  "Houd L1 vast tijdens de fake shot voor de open up variant. Je speler draait dan open naar de goal.",
+  "Gebruik hem aan de rand van de zestien en bij een verdediger die gaat blokken.",
+  "Oefen hem naar links en naar rechts, lopend en sprintend, tot je er niet meer over na hoeft te denken."
+ ],
+ gain:"Je maakt ruimte voor een schot met je sterke been. Ook tegen goede verdedigers werkt dit, omdat ze bang zijn voor je schot.",
+ tip:"Na de fake shot direct een low driven shot. Die combinatie is snel en lastig te verdedigen.",
+ yt:"FC 27 fake shot tutorial"},
+
+{n:8, name:"Controlled sprint", cat:"dribbelen", lvl:"Voor iedereen",
+ keys:[["R1 + LS","vasthouden en sturen"]],
+ why:"Met controlled sprint houd je de bal dicht bij je voet en ga je toch best snel. Volle sprint met R2 geeft grote touches. Daardoor ben je de bal veel sneller kwijt.",
+ steps:[
+  "Houd R1 vast en stuur met de linker stick.",
+  "Gebruik dit als er een verdediger dichtbij is. Gebruik R2 alleen als er echt ruimte voor je ligt.",
+  "Wissel af: met R1 dichtbij komen, en kort R2 om weg te sprinten als hij instapt.",
+  "Maak scherpe bochten met R1. Je speler draait sneller dan bij volle sprint.",
+  "Oefening: dribbel in de Practice Arena alleen met R1 en maak scherpe bochten naar links en rechts. Doe het daarna met R2 en voel het verschil."
+ ],
+ gain:"Je verliest minder ballen en hebt meer tijd om te kiezen. Dat is het verschil tussen een speler die in paniek raakt en een speler die rustig blijft onder druk.",
+ tip:"In FC 27 telt Acceleration meer dan vorig jaar. Een speler met hoge acceleratie komt na een controlled sprint veel sneller weg.",
+ yt:"FC 27 controlled sprint dribbling tutorial",
+ read:"https://hiddenribbon.com/fc-27-skill-moves-and-dribbling-guide.html"},
+
+{n:9, name:"Driven pass", cat:"passen", lvl:"Voor iedereen",
+ keys:[["R1 + ✕","harde, strakke pass over de grond"]],
+ why:"Een gewone pass is soms te traag, waardoor de tegenstander hem onderschept. Een driven pass gaat hard en strak over de grond en komt sneller aan.",
+ steps:[
+  "Houd R1 vast en druk op ✕.",
+  "Gebruik hem voor passes over een middellange afstand, bijvoorbeeld van je verdediger naar je spits die de bal komt halen.",
+  "Let op de kracht. Een te harde driven pass is moeilijk aan te nemen.",
+  "Speel hem niet naar een medespeler die met zijn rug naar de goal onder druk staat. Dan is de bal te hard.",
+  "Oefen in een wedstrijd: probeer elke aanval één driven pass door de linies te spelen."
+ ],
+ gain:"Je speelt sneller door de linies heen. Zo kom je met de bal voorbij het middenveld van de tegenstander.",
+ tip:"Een driven pass naar een spits die terugkomt, trekt zijn verdediger mee. Daarachter ontstaat ruimte voor een steekpass.",
+ yt:"FC 27 driven pass tutorial"},
+
+{n:10, name:"Steekpass op het juiste moment", cat:"passen", lvl:"Voor iedereen",
+ keys:[["△","steekpass"],["L1 + R1 + △","harde steekpass"]],
+ why:"De steekpass is de snelste weg naar een kans. In FC 27 gaat de steekpass precies de kant op die jij aangeeft. Dat geeft je meer controle, maar je moet ook preciezer zijn.",
+ steps:[
+  "Druk op △ en stuur met de linker stick naar de ruimte waar je speler heen loopt.",
+  "Kijk naar de verdediger, niet naar je spits. Speel de bal op het moment dat de verdediger een stap naar voren zet of zich omdraait.",
+  "Doseer de kracht. Kort tikken voor een korte steekpass, langer vasthouden voor de diepte.",
+  "Gebruik L1 + R1 + △ voor een harde, strakke steekpass als er weinig ruimte is.",
+  "Oefen tegen de computer op Legendary. Kijk elke keer waar de bal heen gaat en pas je richting aan."
+ ],
+ gain:"Eén goede steekpass zet een hele verdediging buitenspel. Tegen tegenstanders die hoog spelen is dit je beste wapen.",
+ tip:"Geef eerst een loopactie met L1 en speel daarna de steekpass. Dan loopt je speler al als de bal vertrekt.",
+ yt:"FC 27 through ball tutorial"},
+
+{n:11, name:"Teammate contain", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["R1","vasthouden: medespeler zet druk"]],
+ why:"Met R1 laat je een medespeler druk zetten op de man met de bal. Jij bestuurt zelf een andere speler en zet een passlijn dicht. Zo verdedig je met twee man tegelijk.",
+ steps:[
+  "Houd R1 vast als de aanvaller de bal heeft. De dichtstbijzijnde medespeler loopt op hem af.",
+  "Bestuur zelf een andere verdediger of middenvelder en ga in de passlijn staan.",
+  "Laat R1 los als de aanvaller langs je medespeler gaat. Anders raakt je hele opstelling uit elkaar.",
+  "Gebruik het om tijd te winnen. De bal pak je daarna zelf af.",
+  "Oefen in een wedstrijd: houd R1 vast en wissel tegelijk met de rechter stick naar de speler achter de aanvaller."
+ ],
+ gain:"Twee verdedigers op één aanvaller maken het voor dribbelaars heel lastig. Je dwingt de tegenstander om terug te spelen.",
+ tip:"In FC 27 blijft de medespeler iets verder van de aanvaller dan vroeger. Gebruik het dus vooral om hem af te remmen.",
+ yt:"FC 27 teammate contain defending tutorial"},
+
+{n:12, name:"Ball roll", cat:"skills", lvl:"2★ skill move",
+ keys:[["RS ← of RS →","vasthouden"]],
+ why:"De ball roll schuift de bal zijwaarts met de onderkant van je voet. Het is snel en kort, dus je verliest weinig tijd. Ook spelers met maar twee sterren kunnen hem.",
+ steps:[
+  "Houd de rechter stick naar links of naar rechts vast. Je speler rolt de bal die kant op.",
+  "Laat los zodra je ver genoeg bent. Hoe langer je vasthoudt, hoe verder hij rolt.",
+  "Doe hem net voordat de verdediger wil tackelen. Dan tackelt hij in de lege ruimte.",
+  "Schiet of pass meteen daarna.",
+  "Oefen hem staand en lopend, naar beide kanten, tot hij altijd lukt."
+ ],
+ gain:"Je maakt in een fractie van een seconde een nieuwe hoek voor een schot of pass. Dat is in de zestien goud waard.",
+ tip:"Rol de bal naar de kant van je sterke been en schiet direct.",
+ yt:"FC 27 ball roll tutorial"},
+
+{n:13, name:"Drag back", cat:"skills", lvl:"2★ skill move",
+ keys:[["L1 + R1 + LS↓","vasthouden en de linker stick naar achteren flicken"]],
+ why:"Met de drag back trek je de bal terug onder je voet. Je stopt in één beweging en kunt een nieuwe richting kiezen. Perfect als een verdediger op je af rent.",
+ steps:[
+  "Houd L1 en R1 tegelijk vast.",
+  "Flick de linker stick naar achteren, weg van de kant waar je speler naar kijkt.",
+  "Kies meteen je nieuwe richting met de linker stick: opzij of terug.",
+  "Gebruik hem als een verdediger hard op je af komt. Hij schiet dan voorbij.",
+  "Oefen hem tijdens het lopen en tijdens het sprinten. Kijk hoe snel je speler daarna weer wegkomt."
+ ],
+ gain:"Je ontsnapt uit druk zonder de bal kwijt te raken. Zo houd je balbezit en verlies je geen aanval.",
+ tip:"Na een drag back staat de verdediger vaak scheef. Speel dan een pass in de ruimte die hij net heeft verlaten.",
+ yt:"FC 27 drag back tutorial"},
+
+{n:14, name:"Loopacties sturen", cat:"passen", lvl:"Voor iedereen",
+ keys:[["L1","medespeler laten lopen"],["L1 + R1","tikken: loopactie in een boog"],["L1 + R1 + ✕","pass and follow"]],
+ why:"In FC 27 bepaal jij zelf wanneer en hoe je medespelers lopen. Je kunt een gewone loopactie geven of een run in een boog de ruimte in. Nieuw dit jaar: een run stopt na een vaste afstand. Je moet hem dus opnieuw geven als dat nodig is.",
+ steps:[
+  "Tik L1 om een medespeler een loopactie te laten maken.",
+  "Tik L1 en R1 tegelijk voor een loopactie in een boog. De speler loopt dan om zijn verdediger heen de ruimte in, bijvoorbeeld achter de back.",
+  "Gebruik L1 + R1 + ✕ voor pass and follow. Je passt en de passer loopt in een boog door.",
+  "Geef de run eerst en speel de bal pas als je speler al loopt.",
+  "Let op: een run stopt na een stukje. Geef hem opnieuw als je de bal nog niet hebt gespeeld."
+ ],
+ gain:"Een loopactie trekt een verdediger mee, ook als je de bal niet speelt. Zo maak je ruimte voor een ander. Zo denkt een pro.",
+ tip:"Laat je back overlappen en speel dan binnendoor. De verdediger weet niet wie hij moet nemen.",
+ yt:"FC 27 curved runs pass and follow tutorial",
+ read:"https://www.ea.com/games/ea-sports-fc/fc-27/news/pitch-notes-fc27-gameplay-deep-dive"},
+
+{n:15, name:"Je tactiek goed instellen", cat:"tactiek", lvl:"Voor iedereen",
+ keys:[["Menu","Tactieken: diepte, opbouw en rollen"]],
+ why:"Je tactiek bepaalt waar je spelers staan als jij ze niet bestuurt. In FC 27 doen computerverdedigers minder zelf, dus moet je tactiek kloppen. Sinds update 1.2 werkt een heel hoge verdediging (diepte 95) minder goed.",
+ steps:[
+  "Kies een formatie met minstens één, liever twee verdedigende middenvelders. Die beschermen je centrale verdedigers.",
+  "Krijg je veel goals tegen uit steekpasses? Zet de verdedigingsdiepte dan lager.",
+  "Kies je opbouw: Counter als je snel wilt aanvallen, Short Passing als je de bal wilt houden.",
+  "Geef je backs een verdedigende rol, zodat ze niet allebei tegelijk mee naar voren gaan.",
+  "Test één tactiek minstens tien wedstrijden. Verander niet na elke verloren wedstrijd."
+ ],
+ gain:"Een goede tactiek vangt je fouten op. Je speelt rustiger, omdat je weet dat je achterlijn klopt.",
+ tip:"Maak twee tactieken: een normale en een verdedigende voor als je voor staat. Wissel ertussen met het pijltjeskruis tijdens de wedstrijd.",
+ yt:"FC 27 best custom tactics",
+ read:"https://www.fifplay.com/fc-27-tactics/"},
+
+{n:16, name:"Trivela", cat:"schieten", lvl:"Voor iedereen",
+ keys:[["L2 + ◯","schot met de buitenkant van de voet"]],
+ why:"De trivela is een schot met de buitenkant van de voet. De bal krult de andere kant op dan bij een finesse. Veel spelers zien het als een van de beste schoten in FC 27, vooral van buiten de zestien.",
+ steps:[
+  "Houd L2 vast en druk op ◯.",
+  "Gebruik hem als een finesse met je sterke been niet lekker ligt. Voor een rechtsbenige speler is dat vaak aan de rechterkant van de zestien.",
+  "Mik naar de verre hoek. De bal draait er met de buitenkant naartoe.",
+  "Spelers met de Trivela PlayStyle doen het beter. Met de juiste PlayStyle kun je hem ook laag schieten: L2 + ◯ en dan nog een keer ◯.",
+  "Oefen vanaf de rand van de zestien, vooral vanaf de kant van je sterke been."
+ ],
+ gain:"Je hebt een extra schot dat de keeper niet verwacht. Je hoeft niet meer naar je zwakke been te draaien.",
+ tip:"Ook voor passes kun je de buitenkant gebruiken. Met L2 + ✕ geef je een flair pass om een verdediger heen.",
+ yt:"FC 27 trivela shot tutorial"},
+
+{n:17, name:"Eerste aanname", cat:"dribbelen", lvl:"Voor iedereen",
+ keys:[["LS","richting kiezen voordat de bal aankomt"],["R1 + LS","vasthouden en de stick weg van de bal: bal laten lopen"]],
+ why:"Je eerste aanname bepaalt alles wat daarna komt. Een slechte aanname geeft de verdediger de bal. Een goede aanname zet je meteen richting de goal.",
+ steps:[
+  "Duw de linker stick al de kant op waar je heen wilt voordat de bal aankomt. Je speler neemt de bal dan mee in die richting.",
+  "Laat R2 los bij de aanname. Met sprint wordt je eerste touch groter.",
+  "Houd R1 vast en duw de linker stick weg van de bal om de bal door te laten lopen. Handig om een verdediger te misleiden.",
+  "Kijk voordat de bal aankomt waar de tegenstanders staan. Neem de bal mee weg van de druk.",
+  "Oefening: speel een wedstrijd en let alleen op je aannames. Tel hoe vaak je de bal meteen kwijt was."
+ ],
+ gain:"Pro's winnen bij elke aanname een halve seconde. Daardoor hebben ze meer tijd voor hun volgende actie.",
+ tip:"Neem de bal open aan, met je lichaam naar het veld. Dan zie je meer mogelijkheden.",
+ yt:"FC 27 first touch let ball run tutorial"},
+{n:18, name:"Passlijnen dichtzetten", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["L2 + LS","rustig in de passlijn gaan staan"]],
+ why:"In FC 27 gaan steekpasses precies de kant op die de aanvaller kiest. Als jij in die lijn staat, onderschep je de bal. En spelers die jij zelf bestuurt, kunnen verder reiken dan computerspelers.",
+ steps:[
+  "Bestuur een middenvelder in plaats van een verdediger. Ga tussen de bal en de spits staan.",
+  "Kijk welke speler van de tegenstander vrij staat. Zet die pass dicht in plaats van op de bal af te rennen.",
+  "Beweeg rustig met L2. Rennen met R2 maakt draaien moeilijker.",
+  "Zet het midden dicht en laat de buitenkant open. Passes naar de zijkant zijn minder gevaarlijk.",
+  "Oefen tegen de computer: probeer een helft lang alleen te onderscheppen, zonder te tackelen."
+ ],
+ gain:"Een onderschepping is beter dan een tackle. Je hebt de bal meteen en je verdediging staat nog goed.",
+ tip:"Spelers met een hoge Interceptions waarde hebben in FC 27 meer bereik, ook zonder PlayStyle. Zet die op je middenveld.",
+ yt:"FC 27 how to intercept passes defending"},
+
+{n:19, name:"Centrale verdedigers in de lijn houden", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["L1 / RS","wissel naar je middenvelder"]],
+ why:"De grootste fout in FC is je centrale verdediger uit de lijn trekken. Dan ontstaat er een gat en speelt de tegenstander daar een steekpass in. Pro's laten hun centrale verdedigers bijna altijd staan.",
+ steps:[
+  "Verdedig met je middenvelders. Zij zetten druk, je verdedigers blijven achter.",
+  "Trek een centrale verdediger alleen naar voren als je zeker weet dat je de bal wint.",
+  "Kijk naar je achterlijn voordat je wisselt. Staat er al iemand uit de lijn? Haal hem dan eerst terug.",
+  "Laat je middenvelders terugzakken. Zo heb je een man extra bij je goal.",
+  "Kijk je goals tegen terug. Hoe vaak stond er een verdediger uit de lijn?"
+ ],
+ gain:"Je krijgt minder makkelijke goals tegen. Tegenstanders moeten dan echt iets bijzonders doen om te scoren.",
+ tip:"Twijfel je? Laat je verdediger dan staan. Een achterlijn die goed staat is sterker dan een paniektackle.",
+ yt:"FC 27 defending tips don't pull center backs"},
+
+{n:20, name:"Mentaal sterk blijven", cat:"tactiek", lvl:"Voor iedereen",
+ keys:[["Hoofd","rust, focus en pauzes"]],
+ why:"Een goede speler kan nog steeds slecht spelen als hij boos wordt. Na een domme goal tegen ga je sneller fouten maken. Pro's blijven kalm, ook als ze achter staan.",
+ steps:[
+  "Adem rustig na een goal tegen. Tel tot drie voordat je de aftrap neemt.",
+  "Twee wedstrijden op rij verloren? Neem dan een kwartier pauze.",
+  "Denk aan het volgende moment, niet aan de vorige fout.",
+  "Geef jezelf een doel per wedstrijd, bijvoorbeeld minder balverlies. Dan heb je ook iets gewonnen als je verliest.",
+  "Speel niet als je moe bent. Je reactie wordt dan slechter."
+ ],
+ gain:"Je wint wedstrijden die je eerst weggaf. Rust is vaak het verschil tussen Divisie 2 en Divisie 1.",
+ tip:"De vroegere profspeler Christian Knoth zegt het ook: blijf kalm en gefocust, vooral als je achter staat. Train je hoofd net zo goed als je schot.",
+ yt:"EA FC mindset tips how to stop tilting",
+ read:"https://www.redbull.com/gb-en/ea-fc-27-guide-tips"},
+
+{n:21, name:"Lane change", cat:"skills", lvl:"4★ skill move",
+ keys:[["L1 + RS ← of RS →","vasthouden"]],
+ why:"Met een lane change schuif je de bal snel een baan opzij terwijl je doorloopt. Pro's gebruiken hem veel op de vleugel en voor de zestien om een schietkans te maken.",
+ steps:[
+  "Houd L1 vast.",
+  "Houd de rechter stick naar links of naar rechts. Je speler schuift de bal die kant op en loopt door.",
+  "Doe hem als de verdediger naast je loopt. Je komt dan voor hem.",
+  "Schiet direct daarna een finesse of low driven shot.",
+  "Oefen naar beide kanten, terwijl je loopt en terwijl je sprint."
+ ],
+ gain:"Je maakt ruimte zonder af te remmen. Voor een verdediger is het heel moeilijk om dan bij te blijven.",
+ tip:"Je hebt een speler met minstens vier sterren skill moves nodig. Check dat eerst in je team.",
+ yt:"FC 27 lane change skill tutorial"},
+
+{n:22, name:"Lateral heel to heel", cat:"skills", lvl:"3★ skill move",
+ keys:[["L1 + RS ← dan RS →","vasthouden en snel flicken (of andersom)"]],
+ why:"De lateral heel to heel schuift de bal snel opzij, van de ene hak naar de andere. Hij is kort en snel en past goed bij spelers op de vleugel.",
+ steps:[
+  "Houd L1 vast.",
+  "Flick de rechter stick naar links en meteen naar rechts. Of eerst rechts en dan links.",
+  "Je speler verplaatst de bal zijwaarts. Kies daarna meteen een richting met de linker stick.",
+  "Gebruik hem als een back voor je staat. Je zet hem op het verkeerde been en snijdt naar binnen.",
+  "Oefen eerst staand en daarna op snelheid."
+ ],
+ gain:"Een snelle manier om naar binnen te gaan voor een schot. Werkt met veel spelers, want drie sterren is genoeg.",
+ tip:"Snijd na de beweging naar binnen en schiet een finesse naar de verre hoek.",
+ yt:"FC 27 lateral heel to heel tutorial"},
+
+{n:23, name:"Strafe dribble", cat:"dribbelen", lvl:"Voor iedereen",
+ keys:[["L1 + LS","vasthouden en zijwaarts bewegen"]],
+ why:"Met strafe dribbelen blijft je speler naar de goal kijken terwijl hij zijwaarts beweegt. Zo kun je op elk moment schieten of passen.",
+ steps:[
+  "Houd L1 vast en beweeg met de linker stick naar links of rechts.",
+  "Je speler blijft met zijn gezicht naar voren. Zoek zo een schiethoek of een open passlijn.",
+  "Gebruik het rond de zestien. Laat los en schiet zodra de verdediger zijn plek opgeeft.",
+  "Combineer het met de fake shot of een ball roll.",
+  "Oefen in een vriendschappelijke wedstrijd: maak een schiethoek zonder te sprinten."
+ ],
+ gain:"Je wacht op het goede moment zonder de bal te verliezen. Verdedigers worden ongeduldig en stappen in.",
+ tip:"Kort strafen en dan snel versnellen met R2 is een sterke combinatie.",
+ yt:"FC 27 strafe dribble tutorial",
+ read:"https://hiddenribbon.com/fc-27-skill-moves-and-dribbling-guide.html"},
+
+{n:24, name:"Power shot", cat:"schieten", lvl:"Voor iedereen",
+ keys:[["L1 + R1 + ◯","hard schot, zelf mikken"]],
+ why:"De power shot is het hardste schot in het spel. Van afstand is hij heel gevaarlijk. Je mikt zelf, dus het vraagt oefening.",
+ steps:[
+  "Houd L1 en R1 vast en druk op ◯.",
+  "Je speler neemt meer tijd voor het schot. Zorg dus dat er geen verdediger dichtbij staat.",
+  "Mik met de linker stick precies waar je hem wilt hebben, het liefst hoog in de hoek.",
+  "Gebruik hem van buiten de zestien of als je vrij staat.",
+  "Oefen in de Practice Arena vanaf ongeveer 20 meter. Probeer de bovenhoeken te raken."
+ ],
+ gain:"Een extra wapen als de verdediging dicht staat. De tegenstander moet dan uitkomen en zo ontstaat er ruimte achter.",
+ tip:"Een low driven power shot kan ook: L1 + R1 + ◯ en dan nog een keer ◯. Laag en heel hard.",
+ yt:"FC 27 power shot tutorial"},
+
+{n:25, name:"Een tweetje", cat:"passen", lvl:"Voor iedereen",
+ keys:[["L1 + ✕","pass and go"],["✕ of △","bal terugspelen"]],
+ why:"Met een tweetje ga je samen met een medespeler snel langs een verdediger. Tegen een volle verdediging is dit een van de beste manieren om erdoor te komen.",
+ steps:[
+  "Druk op L1 + ✕. Je speelt de bal en je speler loopt meteen door.",
+  "Je bestuurt nu de ontvanger. Speel de bal terug met ✕ of in de ruimte met △.",
+  "Gebruik het rond de zestien, waar weinig ruimte is.",
+  "Wacht niet te lang met terugspelen. Een tweetje werkt alleen als het snel gaat.",
+  "Oefen tegen de computer: één tweetje per aanval."
+ ],
+ gain:"Snelle combinaties zijn moeilijk te verdedigen. Je komt in de zestien zonder dat je een skill move nodig hebt.",
+ tip:"In FC 27 is er ook L1 + R1 + ✕, waarbij de passer in een boog doorloopt. Probeer allebei en kijk wat beter werkt.",
+ yt:"FC 27 pass and go one two tutorial"},
+
+{n:26, name:"Sprint jockey", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["L2 + R2","vasthouden"]],
+ why:"Sommige aanvallers zijn te snel voor gewoon jockeyen. Met sprint jockey ga je sneller mee en blijf je toch in een verdedigende houding.",
+ steps:[
+  "Houd L2 en R2 tegelijk vast.",
+  "Gebruik het als een snelle aanvaller langs je wil sprinten.",
+  "Laat R2 los zodra je naast of voor hem bent. Dan kun je weer goed draaien.",
+  "Houd het niet de hele tijd vast. Je verdediger wordt dan moeilijk te besturen.",
+  "Oefen tegen snelle vleugelspelers in een vriendschappelijke wedstrijd."
+ ],
+ gain:"Je houdt snelle spelers bij zonder dat ze makkelijk langs je gaan.",
+ tip:"In FC 27 versnellen ook verdedigers zonder Jockey PlayStyle sneller bij sprint jockey. Ook gewone verdedigers kunnen dit dus goed.",
+ yt:"FC 27 sprint jockey tutorial"},
+
+{n:27, name:"Roulette", cat:"skills", lvl:"3★ skill move",
+ keys:[["RS ↻","van onder via links en boven naar rechts draaien"]],
+ why:"Met de roulette draai je om de bal heen en zo ook om de verdediger. Het is een klassieker die nog steeds werkt, vooral als een verdediger op je af komt.",
+ steps:[
+  "Draai de rechter stick vanaf onder, via links en boven, naar rechts. Dat is een driekwart rondje.",
+  "Voor de andere kant draai je vanaf onder, via rechts en boven, naar links.",
+  "Doe hem net voordat de verdediger wil tackelen.",
+  "Na de draai sta je naast de verdediger. Ga meteen door met de linker stick.",
+  "Gebruik hem niet als er twee verdedigers dichtbij staan. De draai duurt even."
+ ],
+ gain:"Een betrouwbare manier om langs één verdediger te komen. Werkt bij elke speler met drie sterren of meer.",
+ tip:"Sterk tegen verdedigers die blijven sprinten. Ze schieten voorbij als jij draait.",
+ yt:"FC 27 roulette skill tutorial"},
+
+{n:28, name:"Ball roll cut", cat:"skills", lvl:"4★ skill move",
+ keys:[["RS ← + LS →","allebei vasthouden: uitkomen naar rechts"]],
+ why:"De ball roll cut is een ball roll met een snelle snede naar de andere kant. Je doet alsof je de ene kant op gaat en gaat dan de andere kant op. Hij wordt veel gebruikt in en rond de zestien.",
+ steps:[
+  "Houd de rechter stick naar links en tegelijk de linker stick naar rechts. Je speler rolt de bal naar links en snijdt dan naar rechts.",
+  "Voor de andere kant: rechter stick naar rechts, linker stick naar links.",
+  "Gebruik hem als de verdediger aan één kant staat. Je gaat naar de open kant.",
+  "Schiet of pass direct daarna.",
+  "Oefen in de Practice Arena naar beide kanten."
+ ],
+ gain:"Snel en kort, dus je verliest geen tijd. Daardoor werkt hij ook als het druk is.",
+ tip:"Combineer hem met een low driven shot naar de korte hoek.",
+ yt:"FC 27 ball roll cut tutorial"},
+
+{n:29, name:"Afschermen", cat:"dribbelen", lvl:"Voor iedereen",
+ keys:[["L2","vasthouden: bal afschermen"]],
+ why:"Met afschermen zet je je lichaam tussen de bal en de verdediger. Zo houd je de bal als je onder druk staat. In FC 27 is afschermen iets zwakker geworden, dus je moet het slim gebruiken.",
+ steps:[
+  "Houd L2 vast als een verdediger in je rug staat.",
+  "Beweeg met de linker stick weg van de verdediger, zodat je lijf ertussen blijft.",
+  "Wacht tot een medespeler vrij loopt en speel dan de bal.",
+  "Gebruik spelers met hoge Strength en Balance. Bij lichte spelers werkt het minder goed.",
+  "Oefen met je spits: neem de bal aan met je rug naar de goal en houd hem drie seconden vast."
+ ],
+ gain:"Je houdt de bal vast tot je team mee is. Zo maak je van een lange bal een echte aanval.",
+ tip:"Spelers met hoge Balance en Agility blijven in FC 27 beter op de been na een duw. Dat heet off balance dribbling en werkt op de PS5.",
+ yt:"FC 27 shielding tutorial"},
+
+{n:30, name:"Tempowissel", cat:"dribbelen", lvl:"Voor iedereen",
+ keys:[["LS los + R2","bal stoppen"],["R2 + LS","weer versnellen"]],
+ why:"Een verdediger kan veel bijhouden, maar niet een plotselinge wissel van tempo. Stoppen en weer versnellen is een van de beste manieren om ruimte te maken.",
+ steps:[
+  "Laat de linker stick los en druk op R2. Je speler stopt de bal meteen.",
+  "Wacht even tot de verdediger ook stopt.",
+  "Ga dan met R2 en de linker stick in een nieuwe richting weg.",
+  "Gebruik het op de vleugel om een back op het verkeerde been te zetten.",
+  "Oefen in een wedstrijd: stop minstens één keer per aanval en kijk wat de verdediger doet."
+ ],
+ gain:"Je hebt geen moeilijke skill moves nodig om langs iemand te komen. Elke speler kan dit.",
+ tip:"Er is ook een skill move Stop and Go: houd L2 vast en flick de rechter stick naar onder en dan naar boven. Die werkt goed tegen spelers die veel sprint jockey gebruiken.",
+ yt:"FC 27 stop and go dribbling tutorial"},
+
+{n:31, name:"Cutback", cat:"passen", lvl:"Voor iedereen",
+ keys:[["▢ ▢","twee keer drukken: lage voorzet"]],
+ why:"Een cutback is een lage bal vanaf de achterlijn terug naar de penaltystip. Verdedigers lopen dan richting hun eigen goal, en jouw speler komt vrij van achteren.",
+ steps:[
+  "Dribbel tot dicht bij de achterlijn in de zestien.",
+  "Druk twee keer op ▢ voor een lage voorzet.",
+  "Mik op de penaltystip of de rand van het doelgebied.",
+  "Zorg dat een middenvelder laat de zestien in loopt.",
+  "Schiet direct op doel bij de eerste aanraking."
+ ],
+ gain:"Cutbacks zijn een van de gevaarlijkste aanvallen in het spel. Eén goede cutback geeft je bijna een vrije kans.",
+ tip:"Wissel af met hoge voorzetten. Als je alleen cutbacks geeft, zet de tegenstander er een man voor.",
+ yt:"FC 27 cutback ground cross tutorial"},
+
+{n:32, name:"Afronden tegen de keeper", cat:"schieten", lvl:"Voor iedereen",
+ keys:[["LS","kleine touch opzij"],["◯ dan ◯","laag in de hoek"],["L1 + ◯","chip als de keeper uitkomt"]],
+ why:"Alleen voor de keeper missen is het ergste wat er is. Pro's maken deze kansen bijna altijd, omdat ze een vast plan hebben.",
+ steps:[
+  "Blijf rustig. Sprint niet de hele weg, want dan wordt je laatste touch te groot.",
+  "Neem een kleine touch opzij, zodat je een betere hoek krijgt.",
+  "Kijk naar de keeper. Komt hij ver uit? Schiet dan laag langs hem of chip over hem heen.",
+  "Blijft hij staan? Schiet dan laag met een low driven shot in de hoek.",
+  "Oefen in de Practice Arena: loop vanaf de middenlijn naar de keeper en kies elke keer een andere afronding."
+ ],
+ gain:"Je haalt meer goals uit dezelfde kansen. In spannende wedstrijden is dat het verschil.",
+ tip:"Een kleine ball roll vlak voor de keeper laat hem vaak te vroeg duiken.",
+ yt:"FC 27 1v1 finishing against goalkeeper tips",
+ read:"https://www.fifplay.com/fc-27-shooting-and-finishing-tips/"},
+
+{n:33, name:"Je tegenstander lezen", cat:"tactiek", lvl:"Voor iedereen",
+ keys:[["Hoofd","kijken, onthouden, aanpassen"]],
+ why:"Elke tegenstander heeft een favoriete actie. De een gaat altijd via links, de ander speelt steeds dezelfde steekpass. Als jij dat ziet, kun je het stoppen.",
+ steps:[
+  "Let de eerste tien minuten goed op. Welke kant kiest hij? Welke skill doet hij steeds?",
+  "Pas je verdediging aan. Zet die kant extra dicht.",
+  "Kijk na de wedstrijd je goals tegen terug. Waar ging het mis?",
+  "Schrijf je drie grootste fouten van de week op en werk daaraan.",
+  "Kijk naar pro's op YouTube of Twitch. Let vooral op wat ze doen als ze de bal niet hebben."
+ ],
+ gain:"Je wint wedstrijden met je hoofd. Dat onderscheidt goede spelers van topspelers.",
+ tip:"Kijk naar pro's als Tekkz en Levy Finn Rieck. Let op hoe rustig ze verdedigen en hoe snel ze een patroon zien.",
+ yt:"Tekkz FC 27 gameplay",
+ read:"https://www.redbull.com/gb-en/ea-fc-27-guide-tips"},
+
+{n:34, name:"Body feint", cat:"skills", lvl:"2★ skill move",
+ keys:[["RS ← of RS →","kort flicken en loslaten"]],
+ why:"De body feint is een schijnbeweging met je lichaam. Je doet alsof je de ene kant op gaat. Simpel en snel, en elke speler met twee sterren kan hem.",
+ steps:[
+  "Flick de rechter stick kort naar links of naar rechts.",
+  "Laat de stick meteen los. Houd je hem te lang vast, dan doe je een ball roll.",
+  "Ga direct de andere kant op met de linker stick.",
+  "Doe hem terwijl je speler naar de goal kijkt.",
+  "Oefen hem vijftig keer: eerst lopend, dan sprintend."
+ ],
+ gain:"Een snelle manier om de verdediger even te laten twijfelen. Die halve seconde is genoeg voor een schot of pass.",
+ tip:"Doe een body feint en daarna een lane change. Zo zet je de verdediger twee keer op het verkeerde been.",
+ yt:"FC 27 body feint tutorial"},
+{n:35, name:"Heel chop", cat:"skills", lvl:"3★ skill move",
+ keys:[["L2 + ◯ dan ✕ + LS","tijdens het lopen, linker stick naar links of rechts"]],
+ why:"De heel chop is een snijbeweging met de hak. Je speler hakt de bal achter zijn standbeen langs naar de andere kant. Hij werkt goed als een verdediger naast je meeloopt.",
+ steps:[
+  "Loop of sprint met de bal.",
+  "Houd L2 vast, druk op ◯ en meteen daarna op ✕.",
+  "Duw tegelijk de linker stick naar links of rechts. Daar gaat de bal heen.",
+  "Gebruik hem op de vleugel om naar binnen te snijden.",
+  "Oefen hem bij verschillende snelheden."
+ ],
+ gain:"Je verandert in één beweging van richting. De verdediger loopt door en jij hebt ruimte.",
+ tip:"Na een heel chop ligt de bal vaak goed voor je sterke been. Schiet dan meteen.",
+ yt:"FC 27 heel chop tutorial"},
+
+{n:36, name:"Reverse stepover", cat:"skills", lvl:"2★ skill move",
+ keys:[["RS → dan RS ↑","draaien van opzij naar voren (of van links)"]],
+ why:"Bij de reverse stepover stap je over de bal heen. Het is een snelle en simpele schijnbeweging waardoor verdedigers gaan twijfelen.",
+ steps:[
+  "Draai de rechter stick van rechts naar boven voor de ene kant.",
+  "Draai van links naar boven voor de andere kant.",
+  "Ga daarna direct weg met de linker stick.",
+  "Gebruik hem aan de rand van de zestien, vlak voor een schot.",
+  "Oefen tot je hem kunt doen zonder naar je controller te kijken."
+ ],
+ gain:"Een stepover laat een verdediger even stilstaan. Dat is genoeg om langs hem te gaan of te schieten.",
+ tip:"Een stepover vlak voor een schot aan de rand van de zestien laat de verdediger vaak bevriezen.",
+ yt:"FC 27 reverse stepover tutorial"},
+
+{n:37, name:"Het spel verleggen", cat:"passen", lvl:"Voor iedereen",
+ keys:[["L1 + R1 + ▢","harde lange bal (driven lob)"]],
+ why:"Als de tegenstander naar één kant schuift, is de andere kant open. Met een harde lange bal verplaats je het spel in één keer.",
+ steps:[
+  "Kijk naar de andere vleugel. Staat daar een speler vrij?",
+  "Houd L1 en R1 vast en druk op ▢. Je speelt een harde, lage lob.",
+  "Doseer de kracht. De bal moet bij je medespeler aankomen, niet over hem heen gaan.",
+  "Neem de bal aan met een eerste touch richting de goal.",
+  "Oefen: probeer in elke helft minstens twee keer het spel te verleggen."
+ ],
+ gain:"Je haalt de druk weg en valt aan waar de tegenstander zwak staat.",
+ tip:"Verleg het spel na een paar korte passes aan één kant. Dan is de andere kant het meest open.",
+ yt:"FC 27 driven lob pass switch play tutorial"},
+
+{n:38, name:"Lobbed through ball", cat:"passen", lvl:"Voor iedereen",
+ keys:[["L1 + △","steekpass door de lucht"]],
+ why:"Soms staat er een muur van verdedigers voor je. Dan speel je de bal over ze heen de ruimte in. In FC 27 gaat deze pass precies waar jij mikt.",
+ steps:[
+  "Houd L1 vast en druk op △.",
+  "Mik met de linker stick in de ruimte achter de verdediging.",
+  "Gebruik weinig kracht als de ruimte klein is.",
+  "Speel hem als je spits al loopt.",
+  "Oefen tegen een tegenstander die hoog verdedigt, bijvoorbeeld in Squad Battles."
+ ],
+ gain:"Tegen tegenstanders die hoog verdedigen, kom je zo in één pass voor de keeper.",
+ tip:"Sinds update 1.2 spelen minder tegenstanders met een heel hoge verdediging. Kijk dus eerst hoe hoog ze staan.",
+ yt:"FC 27 lobbed through ball tutorial"},
+
+{n:39, name:"Schouderduw", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["◯","als je naast de aanvaller loopt"]],
+ why:"Als je naast een aanvaller loopt, kun je met een schouderduw de bal winnen. Dit werkt goed tegen spelers die langs je proberen te sprinten.",
+ steps:[
+  "Loop naast de aanvaller, niet achter hem.",
+  "Druk één keer op ◯. Je verdediger zet zijn schouder in.",
+  "Blijf niet drukken. In FC 27 wordt je verdediger trager als je dat doet.",
+  "Gebruik sterke verdedigers met hoge Strength.",
+  "Oefen tegen snelle vleugelspelers in een vriendschappelijke wedstrijd."
+ ],
+ gain:"Je stopt snelle aanvallers die je met jockeyen niet kunt bijhouden.",
+ tip:"Tegen dribbelaars met hoge Balance werkt het minder goed, door off balance dribbling. Jockey dan liever.",
+ yt:"FC 27 shoulder challenge defending tutorial"},
+
+{n:40, name:"Keeper laten uitkomen", cat:"standaard", lvl:"Voor iedereen",
+ keys:[["△","vasthouden: keeper komt uit"]],
+ why:"Bij een doorbraak kan je keeper de hoek kleiner maken door uit te komen. Maar komt hij te vroeg, dan krijgt de aanvaller een makkelijke chip of pass.",
+ steps:[
+  "Houd △ vast om je keeper uit te laten komen.",
+  "Doe het pas als de aanvaller de bal ver voor zich uit speelt.",
+  "Laat △ los als de aanvaller dichtbij is. Een keeper die stil staat, is moeilijker te passeren.",
+  "Kort uitkomen en dan stoppen kan de aanvaller laten twijfelen.",
+  "Let in je wedstrijden op hoe vaak je uitkwam en hoe vaak dat goed ging."
+ ],
+ gain:"Je stopt meer 1 tegen 1 kansen. Dat scheelt je zo een paar goals per week.",
+ tip:"Te vroeg uitkomen is de bekendste fout. Wacht liever een tel te lang dan een tel te kort.",
+ yt:"FC 27 goalkeeper rush out tutorial",
+ read:"https://www.fifplay.com/fc-27-defending-tips/"},
+
+{n:41, name:"Verdedigen bij voorzetten en cutbacks", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["L1 / RS","op tijd naar de juiste man wisselen"]],
+ why:"Veel goals vallen uit voorzetten en cutbacks. De verdediging kijkt naar de bal en vergeet de speler die laat komt.",
+ steps:[
+  "Wissel naar een centrale verdediger voordat de voorzet komt.",
+  "Let op de speler bij de tweede paal. Die staat vaak vrij.",
+  "Bij een cutback: bestuur een middenvelder en ga bij de penaltystip staan.",
+  "Ren niet naar de bal toe. Zet de ruimte dicht waar de bal heen gaat.",
+  "Kijk je goals tegen terug en zoek de vrije man."
+ ],
+ gain:"Je sluit de makkelijkste route naar een goal af.",
+ tip:"Geef je backs een verdedigende rol in je tactiek. Dan staan ze er als de voorzet komt.",
+ yt:"FC 27 how to defend crosses and cutbacks"},
+
+{n:42, name:"Drag to heel", cat:"skills", lvl:"4★ skill move",
+ keys:[["L1 + RS ↓ dan RS ← of RS →","vasthouden en twee keer flicken"]],
+ why:"Je trekt de bal terug en speelt hem met je hak opzij. Hij is snel en past goed in kleine ruimtes.",
+ steps:[
+  "Houd L1 vast.",
+  "Flick de rechter stick naar onder en dan naar links of rechts.",
+  "Je speler trekt de bal terug en tikt hem met de hak opzij.",
+  "Ga meteen die kant op.",
+  "Oefen hem als de verdediger recht voor je staat."
+ ],
+ gain:"Een snelle uitweg in de zestien. Je komt weg zonder een lange animatie.",
+ tip:"Werkt goed na een drag back. Dan denkt de verdediger dat je terug gaat.",
+ yt:"FC 27 drag to heel tutorial"},
+
+{n:43, name:"Elastico", cat:"skills", lvl:"5★ skill move",
+ keys:[["RS → via ↓ naar ←","halve cirkel draaien"]],
+ why:"De elastico is de bekendste skill van de beste dribbelaars. Je duwt de bal met de buitenkant één kant op en trekt hem snel terug met de binnenkant. Alleen spelers met vijf sterren kunnen hem.",
+ steps:[
+  "Draai de rechter stick van rechts, via onder, naar links.",
+  "Voor de reverse elastico draai je van links, via onder, naar rechts.",
+  "Doe hem als de verdediger instapt of op één been staat.",
+  "Ga meteen door in de nieuwe richting.",
+  "Oefen hem veel, want hij moet precies kloppen. Vijftig keer per kant in de Practice Arena."
+ ],
+ gain:"Met een elastico kom je langs een verdediger die recht voor je staat. Het is een snelle manier om een schiethoek te maken.",
+ tip:"Gebruik hem niet te vaak. Als de tegenstander hem verwacht, blijft hij gewoon staan.",
+ yt:"FC 27 elastico tutorial"},
+
+{n:44, name:"Directional nutmeg", cat:"skills", lvl:"1★ skill move",
+ keys:[["L1 + R1 + RS","vasthouden en richting kiezen"]],
+ why:"Met de nutmeg speel je de bal tussen de benen van de verdediger door. Het is een skill van één ster, dus elke speler kan hem.",
+ steps:[
+  "Houd L1 en R1 vast.",
+  "Duw de rechter stick in de richting waar de bal heen moet.",
+  "Doe hem als de verdediger recht voor je staat met zijn benen uit elkaar.",
+  "Loop meteen achter de bal aan.",
+  "Oefen hem eerst in een rustige situatie, voordat je hem in Rivals gebruikt."
+ ],
+ gain:"Je komt langs zonder lange animatie. En het voelt geweldig.",
+ tip:"Werkt het best als de verdediger net een stap zet om te tackelen.",
+ yt:"FC 27 directional nutmeg tutorial"},
+
+{n:45, name:"Sliding als laatste redmiddel", cat:"verdedigen", lvl:"Voor iedereen",
+ keys:[["▢","sliding"],["▢","na de sliding: snel opstaan"]],
+ why:"Een sliding kan een goal voorkomen. Maar mis je hem, dan lig je op de grond en staat de aanvaller vrij. Daarom is het je laatste redmiddel.",
+ steps:[
+  "Druk op ▢ voor een sliding.",
+  "Gebruik hem alleen als er nog een verdediger achter je staat, of als het echt niet anders kan.",
+  "Goede momenten: een schot blokken of een steekpass stoppen.",
+  "Doe nooit een sliding van achteren. Dat is een overtreding en vaak een kaart.",
+  "Druk na de sliding op ▢ om sneller op te staan."
+ ],
+ gain:"Een goede sliding op het juiste moment redt een wedstrijd. Een slechte kost je hem.",
+ tip:"Gebruik hem vooral bij de zijlijn. Mis je daar, dan is het minder gevaarlijk dan in het midden.",
+ yt:"FC 27 slide tackle tutorial"},
+
+{n:46, name:"Penalty's", cat:"standaard", lvl:"Voor iedereen",
+ keys:[["LS + ◯","mikken en schieten"],["R1 + ◯","finesse penalty"],["RS","als keeper: duiken"]],
+ why:"Een strafschoppenserie of een penalty in de laatste minuut beslist vaak een wedstrijd. Met een vaste aanpak mis je er minder.",
+ steps:[
+  "Mik met de linker stick in de hoek.",
+  "Druk op ◯ en let op de kracht. Met te veel kracht gaat hij over.",
+  "Kies een vaste hoek en een vaste techniek en oefen die tot hij altijd lukt.",
+  "Neem je meerdere penalty's tegen dezelfde speler? Wissel dan af.",
+  "Als keeper: duik met de rechter stick. Kijk of de tegenstander steeds dezelfde hoek kiest."
+ ],
+ gain:"Penalty's zijn gratis goals als je ze beheerst. In een finale is dat alles.",
+ tip:"Oefen penalty's in de Practice Arena. Daar kun je ze zo vaak herhalen als je wilt.",
+ yt:"FC 27 penalty tutorial how to score penalties",
+ read:"https://www.fifplay.com/fc-27-controls/"},
+
+{n:47, name:"Corners in FC 27", cat:"standaard", lvl:"Voor iedereen",
+ keys:[["▢","voorzet geven"],["R1","vasthouden: vrijlopen van je man"],["◯","koppen"]],
+ why:"Corners zijn helemaal nieuw in FC 27. Nadat je een doel kiest, gaat de camera naar de zestien. Jij beweegt dan zelf, kiest je loopactie en maakt zelf contact met de bal. Spelers gaan niet meer vanzelf goed staan.",
+ steps:[
+  "Kies een doel en druk op ▢ voor de voorzet.",
+  "Zodra de camera naar de zestien gaat, beweeg je je speler met de linker stick naar de vrije ruimte.",
+  "Houd R1 vast om je speler los te laten lopen van zijn tegenstander.",
+  "Timing is alles. Kop pas als de bal er echt is. Een schone kopbal is moeilijker geworden, maar wel preciezer.",
+  "Verdedig je een corner? Doe dan hetzelfde: zelf bewegen en zelf de man pakken."
+ ],
+ gain:"Veel spelers kennen dit nieuwe systeem nog niet goed. Als jij het beheerst, haal je makkelijke goals uit corners.",
+ tip:"Een korte corner kan nog steeds. Speel kort als de zestien te vol staat.",
+ yt:"FC 27 new corners tutorial how to score corners",
+ read:"https://www.ea.com/games/ea-sports-fc/fc-27/news/pitch-notes-fc27-gameplay-deep-dive"},
+
+{n:48, name:"Chip shot", cat:"schieten", lvl:"Voor iedereen",
+ keys:[["L1 + ◯","schot met een boogje"]],
+ why:"De chip shot gaat met een boogje over de keeper. Hij werkt alleen op het goede moment, maar dan is hij bijna niet te stoppen.",
+ steps:[
+  "Houd L1 vast en druk op ◯.",
+  "Gebruik hem alleen als de keeper ver uit zijn goal komt.",
+  "Weinig kracht van dichtbij, iets meer van verder weg.",
+  "Probeer hem niet als de keeper op zijn lijn staat. Dan pakt hij hem makkelijk.",
+  "Oefen in de Practice Arena vanaf verschillende afstanden."
+ ],
+ gain:"Een extra keuze bij een 1 tegen 1. De keeper weet niet meer wat je gaat doen.",
+ tip:"Veel guides zeggen dat de chip in FC 27 niet vaak scoort. Gebruik hem dus alleen als de keeper echt uitkomt.",
+ yt:"FC 27 chip shot tutorial"},
+
+{n:49, name:"Je team bouwen", cat:"tactiek", lvl:"Voor iedereen",
+ keys:[["Menu","attributen, PlayStyles en skill sterren checken"]],
+ why:"In FC 27 zijn PlayStyles minder sterk geworden en tellen de gewone waarden weer meer. Een speler met een mooie PlayStyle is dus niet meer vanzelf de beste. Kijk naar het hele plaatje.",
+ steps:[
+  "Aanvallers: let op Acceleration, Balance, Agility en Dribbling. Die bepalen of je speler snel wegkomt en op de been blijft.",
+  "Verdedigers: let op Defensive Awareness, Standing Tackle, Interceptions en Strength.",
+  "Backs: snelheid en uithoudingsvermogen zijn belangrijk.",
+  "Kijk hoeveel skill move sterren je spelers hebben. Een speler kan alleen skills doen tot zijn eigen aantal sterren.",
+  "Probeer een speler eerst een paar wedstrijden voordat je veel coins uitgeeft."
+ ],
+ gain:"Een team dat bij jouw speelstijl past, maakt elke skill in deze app sterker.",
+ tip:"Let op het sterke been. Een linksbenige speler op rechts kan perfect naar binnen snijden voor een finesse.",
+ yt:"FC 27 most important attributes ultimate team",
+ read:"https://www.redbull.com/gb-en/ea-fc-27-guide-tips"},
+
+{n:50, name:"Slim trainen en de goede instellingen", cat:"tactiek", lvl:"Voor iedereen",
+ keys:[["Practice Arena","één skill per keer trainen"],["Instellingen","camera en controls vast kiezen"]],
+ why:"Pro's spelen niet alleen wedstrijden. Ze trainen ook gericht. Met de goede instellingen zie je meer van het veld en bouw je spiergeheugen op.",
+ steps:[
+  "Train één skill tegelijk in de Practice Arena. Doe hem vijftig keer: eerst lopend, dan sprintend, dan na een aanname.",
+  "Gebruik hem daarna in een wedstrijd tegen de computer, en pas daarna in Rivals.",
+  "Kies een wijdere camera, zodat je meer van het veld ziet.",
+  "Verander je controller instellingen niet steeds. Zo bouw je spiergeheugen op.",
+  "Maak een vast schema: tien minuten skills, tien minuten schieten en dan pas wedstrijden."
+ ],
+ gain:"Wat je traint, doe je in de wedstrijd vanzelf. Zo worden alle andere skills in deze app echt van jou.",
+ tip:"Vink in deze app aan welke skills je al beheerst. Zo zie je precies waar je nog aan moet werken.",
+ yt:"FC 27 best camera settings controller settings",
+ read:"https://www.duelmasters.io/blog/fc-27-skill-moves"}
+];
+
+
+const CATS = {
+  verdedigen:{label:"Verdedigen", code:"VER", read:"https://www.fifplay.com/fc-27-defending-tips/"},
+  schieten:{label:"Schieten", code:"SCH", read:"https://www.fifplay.com/fc-27-shooting-and-finishing-tips/"},
+  passen:{label:"Passen en aanval", tab:"Aanval", code:"AAN", read:"https://www.fifplay.com/fc-27-attacking-tips/"},
+  dribbelen:{label:"Dribbelen", code:"DRI", read:"https://www.fifplay.com/fc-27-attacking-tips/"},
+  skills:{label:"Skill moves", code:"SKL", read:"https://fifauteam.com/fc-27-skill-moves/"},
+  standaard:{label:"Keeper en spelhervattingen", tab:"Spelhervattingen", code:"SPH", read:"https://www.fifplay.com/fc-27-controls/"},
+  tactiek:{label:"Tactiek en mindset", tab:"Tactiek", code:"TAC", read:"https://www.fifplay.com/fc-27-tactics/"}
+};
+const TABS = ["alles", ...Object.keys(CATS)];
+
+const STORE = "fifafinn.mastered.v1";
+let mastered = new Set();
+try { mastered = new Set(JSON.parse(localStorage.getItem(STORE) || "[]")); } catch(e) {}
+function save(){ try { localStorage.setItem(STORE, JSON.stringify([...mastered])); } catch(e) {} }
+
+const state = { cat:"alles", q:"", hideDone:false, open:0, lastFocus:null };
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ytUrl = s => "https://www.youtube.com/results?search_query=" + encodeURIComponent(s.yt);
+const readUrl = s => s.read || CATS[s.cat].read;
+const tier = n => n <= 10 ? "top" : n <= 25 ? "goud" : "zilver";
+const tierLabel = n => n <= 10 ? "Top 10" : n <= 25 ? "Goud" : "Zilver";
+const stars = s => { const m = s.lvl.match(/(\d)★/); return m ? +m[1] : 0; };
+
+const FACE = {"◯":"cir","✕":"crs","△":"tri","▢":"sq"};
+const ARROWS = "←→↑↓↻";
+function keyHtml(combo){
+  if (!/[◯✕△▢]|[LR][12S]/.test(combo)) return `<span class="k plain">${esc(combo)}</span>`;
+  return combo.split(" ").filter(Boolean).map(t => {
+    if (t === "+") return '<span class="k word" aria-hidden="true">+</span>';
+    if (FACE[t]) return `<span class="k face ${FACE[t]}">${t}</span>`;
+    if (/^[LR][12]$/.test(t)) return `<span class="k">${t}</span>`;
+    const st = t.match(/^([LR])S(.*)$/);
+    if (st) {
+      let h = `<span class="k stick" title="${st[1] === "L" ? "linker" : "rechter"} stick">${st[1]}</span>`;
+      if (st[2]) h += `<span class="k arrow">${esc(st[2])}</span>`;
+      return h;
+    }
+    if (t.length === 1 && ARROWS.includes(t)) return `<span class="k arrow">${t}</span>`;
+    return `<span class="k word">${esc(t)}</span>`;
+  }).join("");
+}
+const play = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.8v10.4L13 8z" fill="currentColor"/></svg>';
+
+function starsHtml(s){
+  const k = stars(s);
+  if (!k) return `<div class="c-badge">Basis</div>`;
+  return `<div class="c-stars" aria-label="${k} sterren skill move">${"★".repeat(k)}<span class="off">${"★".repeat(5 - k)}</span></div>`;
+}
+
+function cardHtml(s, big){
+  const c = CATS[s.cat];
+  return `<${big ? "div" : "li"} class="card chamfer ${tier(s.n)}${mastered.has(s.n) ? " done" : ""}" data-card="${s.n}">
+    ${big ? "" : `<button class="hit" data-open="${s.n}" aria-label="Open uitleg: ${esc(s.name)}"></button>`}
+    <span class="c-done">Beheerst</span>
+    <div class="c-top">
+      <div class="c-rk"><b>${s.n}</b><span>${c.code}</span></div>
+      <div><div class="c-tag">${tierLabel(s.n)}</div>${starsHtml(s)}</div>
+    </div>
+    <h3 class="c-name">${esc(s.name)}</h3>
+    <div class="c-rule"></div>
+    <div class="c-keys">${keyHtml(s.keys[0][0])}</div>
+    <div class="c-foot">
+      <span class="c-cat">${c.label}</span>
+      <a class="c-vid" href="${ytUrl(s)}" target="_blank" rel="noopener" aria-label="Bekijk ${esc(s.name)} op YouTube">${play}Video</a>
+    </div>
+  </${big ? "div" : "li"}>`;
+}
+
+function visible(){
+  const q = state.q.trim().toLowerCase();
+  return SKILLS.filter(s =>
+    (state.cat === "alles" || s.cat === state.cat) &&
+    (!state.hideDone || !mastered.has(s.n)) &&
+    (!q || (s.name + " " + s.keys.map(k => k[0] + " " + k[1]).join(" ") + " " + CATS[s.cat].label).toLowerCase().includes(q))
+  );
+}
+function renderGrid(){
+  const v = visible();
+  document.getElementById("grid").innerHTML = v.length ? v.map(s => cardHtml(s)).join("") :
+    '<li class="empty">Geen skills gevonden. Probeer een ander woord of kies Alles.</li>';
+  document.getElementById("count").textContent = `${v.length} van 50 kaarten`;
+}
+function renderTabs(){
+  const counts = {}; SKILLS.forEach(s => counts[s.cat] = (counts[s.cat] || 0) + 1);
+  document.getElementById("tabs").innerHTML = TABS.map(k => {
+    const label = k === "alles" ? "Alles" : (CATS[k].tab || CATS[k].label);
+    const n = k === "alles" ? 50 : counts[k];
+    return `<button class="tab" role="tab" data-tab="${k}" aria-selected="${state.cat === k}">${label}<span class="c">${n}</span></button>`;
+  }).join("");
+  const sel = document.querySelector('.tab[aria-selected="true"]');
+  if (sel) sel.scrollIntoView({block:"nearest", inline:"nearest"});
+}
+function renderRank(){
+  const m = mastered.size;
+  const div = m >= 50 ? 0 : Math.max(1, 10 - Math.floor(m / 5));
+  document.getElementById("crestN").textContent = div ? div : "E";
+  document.getElementById("rankName").textContent = div ? `Divisie ${div}` : "Elite";
+  let sub;
+  if (!div) sub = "Alle 50 skills beheerst. Je bent klaar voor Elite.";
+  else if (div === 1) sub = `${m} van 50 beheerst. Nog ${50 - m} tot Elite.`;
+  else { const need = 5 - (m % 5); sub = `${m} van 50 beheerst. Nog ${need} tot Divisie ${div - 1}.`; }
+  document.getElementById("rankSub").textContent = sub;
+  document.getElementById("xpBar").style.width = (m / 50 * 100) + "%";
+}
+function renderToday(){
+  const day = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 864e5);
+  const pool = SKILLS.filter(s => !mastered.has(s.n));
+  const list = pool.length ? pool : SKILLS;
+  const s = list[day % list.length];
+  document.getElementById("today").innerHTML = `
+    <div class="lbl">Train vandaag</div>
+    <div class="today-body">
+      <span class="today-num">${s.n}</span>
+      <div><div class="today-name">${esc(s.name)}</div><div class="c-keys">${keyHtml(s.keys[0][0])}</div></div>
+    </div>
+    <div class="today-acts">
+      <a class="btn yt" href="${ytUrl(s)}" target="_blank" rel="noopener">${play}Video</a>
+      <button class="btn go" data-open="${s.n}">Open kaart</button>
+    </div>`;
+}
+
+function sheetHtml(s){
+  const c = CATS[s.cat];
+  const prev = s.n > 1 ? s.n - 1 : 50, next = s.n < 50 ? s.n + 1 : 1;
+  const done = mastered.has(s.n);
+  return `<div class="sheet">
+    <div class="sheet-side">
+      ${cardHtml(s, true)}
+      <div class="navrow">
+        <button class="nav" data-open="${prev}" aria-label="Vorige skill">◀ ${prev}</button>
+        <button class="nav" data-open="${next}" aria-label="Volgende skill">${next} ▶</button>
+      </div>
+    </div>
+    <div class="sheet-main">
+      <button class="x" data-close="1"><span class="glyph">◯</span>Terug</button>
+      <div class="s-kick">Skill ${s.n} van 50 · ${c.label} · ${esc(s.lvl)}</div>
+      <h2 class="s-title" id="sTitle">${esc(s.name)}</h2>
+
+      <div class="panel"><div class="ph">Knoppen</div><div class="pb ctrl">
+        ${s.keys.map(k => `<div class="r"><span class="c-keys">${keyHtml(k[0])}</span><span class="d">${esc(k[1])}</span></div>`).join("")}
+      </div></div>
+
+      <div class="panel"><div class="ph">Zo ga je het beheersen</div><div class="pb">
+        <ol class="steps">${s.steps.map(t => `<li><span>${esc(t)}</span></li>`).join("")}</ol>
+      </div></div>
+
+      <div class="two">
+        <div class="panel"><div class="ph">Waarom is het belangrijk</div><div class="pb"><p>${esc(s.why)}</p></div></div>
+        <div class="panel"><div class="ph">Hier kom je verder mee</div><div class="pb"><p>${esc(s.gain)}</p></div></div>
+      </div>
+      <div style="height:16px"></div>
+      <div class="tip"><b>Pro tip</b><span>${esc(s.tip)}</span></div>
+
+      <div class="s-acts">
+        <a class="btn yt" href="${ytUrl(s)}" target="_blank" rel="noopener">${play}Bekijk op YouTube</a>
+        <a class="btn" href="${readUrl(s)}" target="_blank" rel="noopener">Lees de uitleg</a>
+        <button class="btn" data-master="${s.n}" aria-pressed="${done}">${done ? "✓ Beheerst" : "Ik beheers deze skill"}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openSheet(n){
+  const s = SKILLS[n - 1]; if (!s) return;
+  if (!state.open) state.lastFocus = document.activeElement;
+  state.open = n;
+  const ov = document.getElementById("ov");
+  ov.innerHTML = sheetHtml(s);
+  ov.hidden = false; ov.scrollTop = 0;
+  document.body.classList.add("lock");
+  ov.querySelector(".x").focus({preventScroll:true});
+}
+function closeSheet(){
+  const ov = document.getElementById("ov");
+  ov.hidden = true; ov.innerHTML = "";
+  document.body.classList.remove("lock");
+  state.open = 0;
+  if (state.lastFocus && document.contains(state.lastFocus)) state.lastFocus.focus({preventScroll:true});
+}
+function setTab(k){ state.cat = k; renderTabs(); renderGrid(); }
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("[data-open],[data-close],[data-tab],[data-master]");
+  if (!t) { if (e.target.id === "ov") closeSheet(); return; }
+  if (t.dataset.open) openSheet(+t.dataset.open);
+  else if (t.dataset.close) closeSheet();
+  else if (t.dataset.tab) setTab(t.dataset.tab);
+  else if (t.dataset.master) {
+    const n = +t.dataset.master;
+    mastered.has(n) ? mastered.delete(n) : mastered.add(n);
+    save(); renderRank(); renderToday(); renderGrid(); openSheet(n);
+  }
+});
+document.getElementById("prevTab").onclick = () => setTab(TABS[(TABS.indexOf(state.cat) - 1 + TABS.length) % TABS.length]);
+document.getElementById("nextTab").onclick = () => setTab(TABS[(TABS.indexOf(state.cat) + 1) % TABS.length]);
+document.getElementById("hideDone").onclick = e => {
+  state.hideDone = !state.hideDone; e.currentTarget.setAttribute("aria-pressed", state.hideDone); renderGrid();
+};
+document.getElementById("q").addEventListener("input", e => { state.q = e.target.value; renderGrid(); });
+document.addEventListener("keydown", e => {
+  if (!state.open) return;
+  if (e.key === "Escape") closeSheet();
+  else if (e.key === "ArrowRight") openSheet(state.open < 50 ? state.open + 1 : 1);
+  else if (e.key === "ArrowLeft") openSheet(state.open > 1 ? state.open - 1 : 50);
+});
+function fromHash(){
+  const m = location.hash.match(/^#skill-(\d+)$/);
+  if (m && +m[1] >= 1 && +m[1] <= 50) openSheet(+m[1]);
+}
+window.addEventListener("hashchange", fromHash);
+
+renderTabs(); renderGrid(); renderRank(); renderToday(); fromHash();
+</script>
+</body>
+</html>
